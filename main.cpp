@@ -14,8 +14,11 @@ void clear_screen() {
 }
 
 int main() {
-    Cuidadano cuidadanos[100];
-    Residuo residuos[1000];
+    int cuidadanos_count = numero_cuidadanos();
+    int residuos_count = numero_residuos();
+
+    Cuidadano cuidadanos[cuidadanos_count + 10];
+    Residuo residuos[residuos_count + 10];
 
     cout << "Que desea?\t1 (añadir información)\t2 (obtener información) ";
     int opcion;
@@ -28,8 +31,18 @@ int main() {
         int id;
         cin >> id;
 
+        bool cuidadano_registrado = false;
+
         // Si el cuidadano no está registrado, se registra
-        if (cuidadanos[id].id != id || cuidadanos[id].nombres == "") {
+        for (int j = 0; j < cuidadanos_count; j++) {
+            if (cuidadanos[j].id == id) {
+                cuidadano_registrado = true;
+                cout << "Registrando datos del cuidadano " << cuidadanos[j].nombres << endl;
+                break;
+            }
+        }
+
+        if (!cuidadano_registrado) {
             cout << "El cuidadano no está registrado, se procederá a registrar" << endl;
             cout << "Ingrese los nombres del cuidadano: ";
             string nombres;
@@ -40,10 +53,9 @@ int main() {
             string direccion;
             getline(cin >> ws, direccion, '\n');
 
-            cuidadanos[id] = Cuidadano{id, nombres, direccion};
-            anadir_cuidadano(cuidadanos[id]);
+            //cuidadanos[id] = Cuidadano{id, nombres, direccion};
+            anadir_cuidadano(Cuidadano{id, nombres, direccion});
         } else {
-            cout << "Registrando datos del cuidadano " << cuidadanos[id].nombres << endl;
         }
 
         cout << "Ingrese la cantidad de residuos: ";
@@ -54,9 +66,9 @@ int main() {
             Residuo nuevo_residuo;
             cout << "Ingrese la cantidad de kg del residuo " << i+1 << ": ";
             cin >> nuevo_residuo.cantidad_kg;
-            cout << "Ingrese el tipo de residuo (1)Plastico (2)Organico (3)Papel (4)Otro: " << i << ": ";
+            cout << "Ingrese el tipo de residuo (1)Plastico (2)Organico (3)Papel (4)Otro: ";
             cin >> nuevo_residuo.tipo;
-            cout << "Ingrese una descripción del residuo " << i << ": ";
+            cout << "Ingrese una descripción del residuo " << i+1 << ": ";
             cin >> nuevo_residuo.descripcion;
             nuevo_residuo.uid = id;
             anadir_residuo(nuevo_residuo);
@@ -70,7 +82,7 @@ int main() {
         cout << "\t1 (obtener información de un cuidadano)" << endl;
         cout << "\t2 (obtener información de los residuos)" << endl;
         cout << "\t3 (obtener que cuidadano generó más residuos)" << endl;
-        cout << "\t4 (residuos según tipo)" << endl;
+        cout << "\t4 (Salir)" << endl;
 
         cout << "Ingrese la opción: ";
         int o;
@@ -81,20 +93,28 @@ int main() {
                 cout << "Ingrese el id del cuidadano: ";
                 int id;
                 cin >> id;
+                bool cuidadano_registrado = false;
 
-                if (cuidadanos[id].id != id || cuidadanos[id].nombres == "") {
-                    cout << "El cuidadano no está registrado" << endl;
-                } else {
-                    cout << "Información del cuidadano " << cuidadanos[id].nombres << endl;
-                    cout << "Dirección: " << cuidadanos[id].direccion << endl;
-                    float suma_kg = 0;
-                    for (int i = 0; i < 1000; i++) {
-                        if (residuos[i].uid == id) {
-                            suma_kg += residuos[i].cantidad_kg;
+                for(int i = 0; i < cuidadanos_count; i++) {
+                    if (cuidadanos[i].id == id) {
+                        cout << "Información del cuidadano " << cuidadanos[i].nombres << endl;
+                        cout << "Dirección: " << cuidadanos[i].direccion << endl;
+                        float suma_kg = 0;
+                        for (int j = 0; j < residuos_count; j++) {
+                            if (residuos[j].uid == id) {
+                                suma_kg += residuos[j].cantidad_kg;
+                            }
                         }
+                        cout << "\tCantidad de residuos generados: " << suma_kg << " kg" << endl;
+                        cuidadano_registrado = true;
+                        break;
                     }
-                    cout << "\tCantidad de residuos generados: " << suma_kg << " kg" << endl;
                 }
+
+                if (!cuidadano_registrado) {
+                    cout << "El cuidadano no está registrado" << endl;
+                }
+
                 break;
             }
             case 2: {
@@ -105,24 +125,24 @@ int main() {
                 int residuos_organicos = 0;
                 int residuos_papel = 0;
                 int residuos_otros = 0;
-                for (int i = 0; i < 1000; i++) {
+                for (int i = 0; i < residuos_count; i++) {
                     if (residuos[i].uid != 0) {
-                        total_residuos++;
+                        total_residuos += residuos[i].cantidad_kg;
                         switch (residuos[i].tipo) {
                             case 1: {
-                                residuos_plastico++;
+                                residuos_plastico += residuos[i].cantidad_kg;
                                 break;
                             }
                             case 2: {
-                                residuos_organicos++;
+                                residuos_organicos += residuos[i].cantidad_kg;
                                 break;
                             }
                             case 3: {
-                                residuos_papel++;
+                                residuos_papel += residuos[i].cantidad_kg;
                                 break;
                             }
                             case 4: {
-                                residuos_otros++;
+                                residuos_otros += residuos[i].cantidad_kg;
                                 break;
                             }
                         }
@@ -138,10 +158,10 @@ int main() {
             case 3: {
                 int cuidadano_mas_residuos = 0;
                 int cantidad_residuos_kg = 0;
-                for (int i = 0; i < 100; i++) {
+                for (int i = 0; i < cuidadanos_count; i++) {
                     int cantidad_residuos_cuidadano = 0;
-                    for (int j = 0; j < 1000; j++) {
-                        if (residuos[j].uid == i) {
+                    for (int j = 0; j < residuos_count; j++) {
+                        if (residuos[j].uid == cuidadanos[i].id) {
                             cantidad_residuos_cuidadano += residuos[j].cantidad_kg;
                         }
                     }
@@ -150,8 +170,9 @@ int main() {
                         cuidadano_mas_residuos = i;
                     }
                 }
-                cout << "El cuidadano que generó más residuos es " << cuidadanos[cuidadano_mas_residuos].nombres << "con " << cantidad_residuos_kg << " kg" << endl;
+                cout << "El cuidadano que generó más residuos es " << cuidadanos[cuidadano_mas_residuos].nombres << " con " << cantidad_residuos_kg << " kg" << endl;
                 break;
             }
+        }
     }
 }

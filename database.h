@@ -3,6 +3,28 @@
 
 using namespace std;
 
+int numero_cuidadanos() {
+  ifstream fr("cuidadanos.db");
+  string line;
+  int i = 0;
+  while (getline(fr, line)) {
+    i++;
+  }
+  fr.close();
+  return i;
+}
+
+int numero_residuos() {
+  ifstream fr("residuos.db");
+  string line;
+  int i = 0;
+  while (getline(fr, line)) {
+    i++;
+  }
+  fr.close();
+  return i;
+}
+
 void cargar_cuidadanos(Cuidadano cuidadanos[]) {
   ifstream fr("cuidadanos.db");
   string line;
@@ -10,14 +32,14 @@ void cargar_cuidadanos(Cuidadano cuidadanos[]) {
   while (getline(fr, line)) {
     int pos = line.find("|");
     int id = stoi(line.substr(0, pos));
-    cuidadanos[id].id = id;
+    cuidadanos[i].id = id;
     line.erase(0, pos + 1);
 
     pos = line.find("|");
-    cuidadanos[id].nombres = line.substr(0, pos);
+    cuidadanos[i].nombres = line.substr(0, pos);
     line.erase(0, pos + 1);
 
-    cuidadanos[id].direccion = line;
+    cuidadanos[i].direccion = line;
     i++;
   }
   fr.close();
