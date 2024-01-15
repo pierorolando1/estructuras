@@ -36,18 +36,26 @@ struct Residuo {
     string id;
     string descripcion;
     int tipo; // 1 => plastico, 2 => orgánicos, 3 => papel, 4 => otros
-    ResiduoCambio* head;
-    ResiduoCambio* tail;
+    ResiduoCambio* cambioMasAntiguo;
+    ResiduoCambio* cambioMasReciente;
+
+    void mostrarHistorial() {
+        ResiduoCambio* temp = cambioMasAntiguo;
+        while (temp != NULL) {
+            cout << temp->descripcion << "->";
+            temp = temp->next;
+        }
+    }
 
     void insertarAlFinal(ResiduoCambio* nuevo) {
-        if (head == NULL) {
-            head = nuevo;
-            tail = nuevo;
+        if (cambioMasAntiguo == NULL) {
+            cambioMasAntiguo = nuevo;
+            cambioMasReciente = nuevo;
         } else {
-            tail->next = nuevo;
-            nuevo->prev = tail;
-            tail = nuevo;
-        } 
+            cambioMasReciente->next = nuevo;
+            nuevo->prev = cambioMasReciente;
+            cambioMasReciente = nuevo;
+        }
     }
 
     void insertarCambio(string descripcion) {
@@ -57,22 +65,20 @@ struct Residuo {
         nuevo->descripcion = descripcion;
         nuevo->prev = NULL;
         nuevo->next = NULL;
-        
-        if (head == NULL) {
-            head = nuevo;
-            tail = nuevo;
+
+        if (cambioMasAntiguo == NULL) {
+            cambioMasAntiguo = nuevo;
+            cambioMasReciente = nuevo;
         } else {
-            tail->next = nuevo;
-            nuevo->prev = tail;
-            tail = nuevo;
+            cambioMasReciente->next = nuevo;
+            nuevo->prev = cambioMasReciente;
+            cambioMasReciente = nuevo;
         }
 
         ofstream fw("historial.db", std::ofstream::out | std::ofstream::app);
         if (fw.is_open()) {
             fw << nuevo->id << "|";
             fw << nuevo->residuo_id << "|";
-            fw << nuevo->prev->id << "|";
-            fw << nuevo->next->id << "|";
             fw << descripcion << "\n";
 
             fw.close();
@@ -87,13 +93,13 @@ struct Residuo {
         nuevo->prev = NULL;
         nuevo->next = NULL;
 
-        ResiduoCambio* temp = head;
+        ResiduoCambio* temp = cambioMasAntiguo;
         while (temp != NULL) {
             if (temp->residuo_id == residuo_id) {
                 if (temp->prev == NULL) {
                     nuevo->next = temp;
                     temp->prev = nuevo;
-                    head = nuevo;
+                    cambioMasAntiguo = nuevo;
                 } else {
                     nuevo->next = temp;
                     nuevo->prev = temp->prev;
@@ -120,23 +126,31 @@ int getLengthResiduos() {
     return i;
 }
 
-Residuo* obtenerResiduos() {
+vector<Residuo> obtenerResiduos() {
     ifstream fr("residuos.db");
     string line;
     int i = 0;
-    Residuo residuos[getLengthResiduos()];
+    vector<Residuo> residuos;
     while (getline(fr, line)) {
         int pos = line.find("|");
-        residuos[i].id = line.substr(0, pos);
+        string id = line.substr(0, pos);
         line.erase(0, pos + 1);
 
         pos = line.find("|");
-        residuos[i].descripcion = line.substr(0, pos);
+        string descripcion = line.substr(0, pos);
         line.erase(0, pos + 1);
 
         pos = line.find("|");
-        residuos[i].tipo = stoi(line.substr(0, pos));
+        string tipo = line.substr(0, pos);
         line.erase(0, pos + 1);
+
+        Residuo nuevo;
+        nuevo.id = id;
+        nuevo.descripcion = descripcion;
+        nuevo.tipo = stoi(tipo);
+        nuevo.cambioMasAntiguo = NULL;
+        nuevo.cambioMasReciente = NULL;
+        residuos.push_back(nuevo);
 
         // obtener historial de cambios
         ifstream fr2("historial.db");
@@ -151,25 +165,18 @@ Residuo* obtenerResiduos() {
             line2.erase(0, pos2 + 1);
 
             pos2 = line2.find("|");
-            string prev_id = line2.substr(0, pos2);
+            string descripcion = line2.substr(0, pos2);
             line2.erase(0, pos2 + 1);
 
-            pos2 = line2.find("|");
-            string next_id = line2.substr(0, pos2);
-            line2.erase(0, pos2 + 1);
-            
-            string descripcion = line2;
-
-            if (residuo_id == residuos[i].id) {
-                ResiduoCambio* nuevo = new ResiduoCambio;
-                nuevo->id = id;
-                nuevo->residuo_id = residuo_id;
-                nuevo->descripcion = descripcion;
-                nuevo->prev = NULL;
-                nuevo->next = NULL;
-
-                residuos[i].insertarAlFinal(nuevo);
-            }
+            if (residuo_id == nuevo.id) {
+                ResiduoCambio* nuevoCambio = new ResiduoCambio;
+                nuevoCambio->id = id;
+                nuevoCambio->residuo_id = residuo_id;
+                nuevoCambio->descripcion = descripcion;
+                nuevoCambio->prev = NULL;
+                nuevoCambio->next = NULL;
+                nuevo.insertarAlFinal(nuevoCambio);
+            } 
         }
 
         i++;
